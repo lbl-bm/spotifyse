@@ -19,8 +19,18 @@ const PlayerContent: React.FC<PlayerContentProps> = ({ song, songUrl }) => {
   const [volume, setVolume] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const [play, { pause, sound }] = useSound(songUrl, {
+    volume: volume,
+    onPlay: () => setIsPlaying(true),
+    onend: () => {
+      setIsPlaying(false);
+      onPlayNext();
+    },
+    onpause: () => setIsPlaying(false),
+    format: ["mp3"],
+  });
+
   const Icon = isPlaying ? BsPauseFill : BsPlayFill;
-  const VolumeIcon = volume === 0 ? HiSpeakerXMark : HiSpeakerWave;
 
   const onPlayNext = () => {
     if (player.ids.length === 0) {
@@ -47,7 +57,7 @@ const PlayerContent: React.FC<PlayerContentProps> = ({ song, songUrl }) => {
     const currentIndex = player.ids.findIndex(
       (id: string) => id === player.activeId
     );
-    const previousSong = player.ids[currentIndex - 1]; // 修复：正确获取上一首歌
+    const previousSong = player.ids[currentIndex - 1];
 
     if (!previousSong) {
       return player.setId(player.ids[player.ids.length - 1]);
@@ -56,34 +66,20 @@ const PlayerContent: React.FC<PlayerContentProps> = ({ song, songUrl }) => {
     player.setId(previousSong);
   };
 
-  const [play, { pause, sound, isPlaying: soundPlaying }] = useSound(songUrl, {
-    volume: volume,
-    onPlay: () => setIsPlaying(true),
-    onend: () => {
-      setIsPlaying(false);
-      onPlayNext();
-    },
-    onpause: () => setIsPlaying(false),
-    format: ["mp3"],
-  });
-
   useEffect(() => {
-    // 如果音频正在播放，确保继续播放
-    if (sound && soundPlaying) {
-      sound.play();
+    // 当 songUrl 改变时，立即开始播放
+    if (sound) {
+      play(); // 开始播放新歌曲
+      setIsPlaying(true); // 设置为正在播放
     }
-
-    return () => {
-      sound?.unload();
-    };
-  }, [sound, soundPlaying]);
+  }, [songUrl, play, sound]); // 依赖于 songUrl
 
   const handlePlay = () => {
     if (isPlaying) {
       pause(); // 暂停播放
     } else {
       // 如果音频已经播放过，从当前进度继续播放
-      if (sound && sound.seek() !== 0) {
+      if (sound) {
         sound.play(); // 从当前位置继续播放
       } else {
         play(); // 如果是第一次播放，从头开始播放
@@ -93,11 +89,7 @@ const PlayerContent: React.FC<PlayerContentProps> = ({ song, songUrl }) => {
   };
 
   const toggleMute = () => {
-    if (volume === 0) {
-      setVolume(1);
-    } else {
-      setVolume(0);
-    }
+    setVolume(volume === 0 ? 1 : 0);
   };
 
   return (
@@ -138,7 +130,7 @@ const PlayerContent: React.FC<PlayerContentProps> = ({ song, songUrl }) => {
 
       <div className="hidden md:flex w-full justify-end pr-2">
         <div className="flex items-center gap-x-2 w-[120px]">
-          <VolumeIcon
+          <HiSpeakerWave
             onClick={toggleMute}
             className="cursor-pointer"
             size={34}
