@@ -80,8 +80,6 @@ const UploadModal = () => {
         .upload(songKey, songFile, {
           cacheControl: "3600",
           upsert: false,
-          // resumable: true, 
-          // 开启分块上传
         });
 
       if (songError) {
@@ -96,7 +94,6 @@ const UploadModal = () => {
         .upload(imageKey, imageFile, {
           cacheControl: "3600",
           upsert: false,
-          resumable: true, // 开启分块上传
         });
 
       if (imageError) {
